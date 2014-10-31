@@ -242,6 +242,11 @@ if __name__ == '__main__':
             '--port', '-p',
             help = 'Serial port device',
             default = '/dev/ttyUSB0')
+    parser.add_argument(
+            '--retry', '-r',
+            help = 'Connection retry count',
+            type = int,
+            default = 3)
 
     subparsers = parser.add_subparsers(
             dest = 'operation',
@@ -296,7 +301,17 @@ if __name__ == '__main__':
     esp = None
     if args.operation not in ('image_info','make_image'):
         esp = ESPROM(args.port)
-        esp.connect()
+        while args.retry > 0:
+            try:
+                esp.connect()
+                break
+            except Exception, exc:
+                print 'Exception:', exc
+                
+                args.retry -= 1
+                if args.retry:
+                    print 'Retrying, %d left' % args.retry
+
 
     # Do the actual work. Should probably be split into separate functions.
     if args.operation == 'load_ram':
